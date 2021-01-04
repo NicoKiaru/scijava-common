@@ -31,6 +31,7 @@ package org.scijava.command;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -100,6 +101,47 @@ public class InputsTest {
 		int age = (Integer) values.get("age");
 		assertEquals("Chuckles", name);
 		assertEquals(37, age);
+	}
+
+
+	static File[] mockFileArray = new File[]{new File("file_0"), new File("file_1")}; // To test input confusion
+
+	/** Array input. */
+	@Test
+	public void testArrayInput() {
+		UserClass[] userObjects = new UserClass[2];
+		userObjects[0] = new UserClass("User Object 0");
+		userObjects[1] = new UserClass("User Object 1");
+
+		setExpected(new HashMap<String, Object>() {{
+			put("userObjects", userObjects);
+		}});
+
+		Inputs inputs = new Inputs(context);
+		inputs.getInfo().setName("testArrayInput");//TEMP
+		addTempInput(inputs, "userObjects", UserClass[].class);
+
+		Map<String, Object> values = inputs.harvest();
+		assertEquals(userObjects, values.get("userObjects"));
+	}
+
+	/** Test element of array input class compatibility. */
+	@Test
+	public void testArrayElementClassCompatibilityInput() {
+		UserClass[] userObjects = new UserClass[2];
+		userObjects[0] = new UserClass("User Object 0");
+		userObjects[1] = new UserClass("User Object 1");
+
+		setExpected(new HashMap<String, Object>() {{
+			put("userObjects", userObjects);
+		}});
+
+		Inputs inputs = new Inputs(context);
+		inputs.getInfo().setName("testArrayConfusionInput");//TEMP
+		addTempInput(inputs, "userObjects", UserClassWithGenerics[].class); // UserClassWithGenerics != UserClass -> we expect this input not filled
+
+		Map<String, Object> values = inputs.harvest();
+		assertEquals(null, values.get("userObjects"));
 	}
 
 	/** Tests inputs with configuration. */
@@ -174,6 +216,38 @@ public class InputsTest {
 				final Object value = expected.get(name);
 				module.setInput(name, value);
 			}
+		}
+	}
+
+	/**
+	 * Simple class to test input arrays in command
+	 */
+	public static class UserClass {
+
+		String name;
+
+		public UserClass(String objectName) {
+			name = objectName;
+		}
+
+		public String toString() {
+			return  name;
+		}
+	}
+
+	/**
+	 * Simple class to test input arrays in command, with Generics
+	 */
+	public static class UserClassWithGenerics<T> {
+
+		String name;
+
+		public UserClassWithGenerics(String objectName, T generic_object) {
+			name = objectName;
+		}
+
+		public String toString() {
+			return  name;
 		}
 	}
 }
